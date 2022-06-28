@@ -1,3 +1,13 @@
+"""
+Project Name: Job Scrapper using Python
+Date Created: 19th June 2022
+Author: Abhimanyu Sangitrao
+Purpose: The aim of this project is to automate the task of searching for Jobs based on title and location on top job portals. 
+         This tool can be used to consolidate the latest job postings from some of the top job portals and compare as per user needs.
+         This project uses Python's BeautifulSoup module along with requests module to scrape data from the webpages and perform data
+         processsing and analysis using Pandas, numpy, nltk etc.
+"""
+
 # -------------------------------------------------------- Imports ---------------------------------------------#
 import urllib
 import requests
@@ -190,8 +200,6 @@ for i in range(0,len(all_jobs)):
 #     print(f"{i} -> https://indeed.co.uk{all_jobs[i].find('a')['href']}")
     job_links.append(job_link)
 
-
-
 # Extract Date of job posting from the scraped text
 job_dates = []
 for i in range(0,len(all_jobs)):
@@ -246,65 +254,31 @@ df_final = pd.merge(df_jobs,df_all_rows,on=['Job Link'],how='outer')
 df_final.fillna('',inplace=True)
 
 # ------------------------------------------------- Styling the dataframe -------------------------------------------#
+# Cleaning the text just for styling purpose in order to avoid blanks getting included in the bullet list on UI
+df_final['Skills'] = df_final['Skills'].apply(lambda val: ' '.join(val.replace('\n','|').split()))
+df_final['Skills'] = df_final['Skills'].apply(lambda ele: '<ul>' + ''.join([f'<li>{val}</li>' if (len(val.strip()) != 0) else f'<li style="display:none;">{val}</li>' for val in ele.split('|')]) + '</ul>')
+df_final['Responsibilities'] = df_final['Responsibilities'].apply(lambda val: ' '.join(val.replace('\n','|').split()))
+df_final['Responsibilities'] = df_final['Responsibilities'].apply(lambda ele: '<ul>' + ''.join([f'<li>{val}</li>' if (len(val.strip()) != 0) else f'<li style="display:none;">{val}</li>' for val in ele.split('|')]) + '</ul>')
+df_final['Additional_Q'] = df_final['Additional_Q'].apply(lambda val: ' '.join(val.replace('\n','|').split()))
+df_final['Additional_Q'] = df_final['Additional_Q'].apply(lambda ele: '<ul>' + ''.join([f'<li>{val}</li>' if (len(val.strip()) != 0) else f'<li style="display:none;">{val}</li>' for val in ele.split('|')]) + '</ul>')
+df_final['Job Summary'] = df_final['Job Summary'].apply(lambda val: ' '.join(val.replace('\n','|').split()))
+df_final['Job Summary'] = df_final['Job Summary'].apply(lambda ele: '<ul>' + ''.join([f'<li>{val}</li>' if (len(val.strip()) != 0) else f'<li style="display:none;">{val}</li>' for val in ele.split('|')]) + '</ul>')
+
 # Creating custom div tags with custom styling suitable to the user for better UI
+# Creating div 1
 div_1 = '<div style="width: 500px; height: 100px; overflow-y:scroll; vertical-align: top;">'
 df_final['Job Summary'] = df_final['Job Summary'].apply(lambda val :  div_1 + val + '</div>')
 df_final['Skills'] = df_final['Skills'].apply(lambda val :  div_1 + str(val) + '</div>')
 df_final['Responsibilities'] = df_final['Responsibilities'].apply(lambda val :  div_1 + str(val) + '</div>')
 df_final['Additional_Q'] = df_final['Additional_Q'].apply(lambda val :  div_1 + str(val) + '</div>')
-
+# Creating div 2
 div_2 = '<div style="width: 140px;height: 100px; vertical-align: top;">'
 df_final['Date Posted'] = df_final['Date Posted'].apply(lambda val :  div_2 + str(val) + '</div>')
 df_final['Job Title'] = df_final['Job Title'].apply(lambda val :  div_2 + str(val) + '</div>')
 df_final['Comapny Name'] = df_final['Comapny Name'].apply(lambda val :  div_2 + str(val) + '</div>')
 
-# custom_styling = [
-#         {
-#             "selector":"",
-#             "props":[('border-left','0.5px solid black'),
-#                  ('border-top','0.5px solid black'),
-#                  ('border-bottom','0.5px solid black')
-                     
-#                 ]
-#         },
-        
-#         {
-#             "selector": "th",
-#             "props": [
-#                 ('width','100%'),
-#                 ("background", "#00008B"),
-#                 ("color", "white"),
-#                 ("font-family", "tahoma"),
-#                 ("text-align", "center"),
-#                 ("font-size", "15px"),
-#                 ("border-bottom",'0.5px solid black'),
-#                 ("border-right",'0.5px solid black'),
-#                 ('border-collapse','collapse')
-#             ],
-#         },
-#         {
-#             "selector": "td",
-#             "props": [
-#                 ("font-family", "tahoma"),
-#                 ('text-align','top'),
-#                 ("color", "black"),
-#                 ("text-align", "left"),
-#                 ("font-size", "15px"),
-# #                 ('border-left','0.5px solid black'),
-#                 ('border-right','0.5px solid black'),
-#                 ('border-bottom','0.5px solid black'),
-#                 ('border-collapse','collapse'),
-#                 ('vertical-align','top')
-                
-#             ],
-#         },
-
-#         {"selector": "tr:hover", "props": [("background-color", "#d3d3d3")]}
-#     ]
-
-df_final_styled = (df_final.style
-#                    .set_table_styles(custom_styling)
-                   .format({"Job Link": make_clickable}))
+# Pandas styler object being created using the df_final dataframe and make_clickable function
+df_final_styled = (df_final.style.format({"Job Link": make_clickable}))
 # ---------------------------------------------- Dataframe styling ends --------------------------------------------------------#
 
 # Loading the flask app and rendering the output
@@ -313,7 +287,6 @@ def home():
     '''
     Flask view function to render the output on the UI displaying all the job postings extracted from various Job Portals
     '''
-    print("Hello")
     # index_bs.html contains bootstrap classes that have been applied to the styled dataframe for better UI
     return render_template('index_bs.html',tables=[df_final_styled.hide_index().render()])
 if '__main__' == __name__:
